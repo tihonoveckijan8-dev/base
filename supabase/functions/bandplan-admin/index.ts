@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       .split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
     // WHY: keep the intended password-login admin available even if ADMIN_EMAILS was misconfigured;
     // this is an exact Supabase Auth user ID, not a broad email-domain or public-signup rule.
-    const trustedAdminIds = new Set(["55286f2e-f928-4b56-aaf6-e103f69d1c2f"]);
+    const trustedAdminIds = new Set(["55286f2e-f928-4b56-aaf6-e103f69d1c2f", "817c4b98-e4d8-4b42-a6b3-c51135a53fa1"]);
     if (!allowlist.includes(authData.user.email.toLowerCase()) && !trustedAdminIds.has(authData.user.id)) {
       return json({ error: "У этого аккаунта нет прав администратора. Добавьте email в ADMIN_EMAILS." }, 403);
     }
