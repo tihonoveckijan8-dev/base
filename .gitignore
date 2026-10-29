@@ -1,0 +1,3 @@
+# Local public Supabase project settings for static admin console
+config.js
+.DS_Store
