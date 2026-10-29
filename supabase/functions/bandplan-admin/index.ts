@@ -43,7 +43,10 @@ Deno.serve(async (req) => {
 
     const allowlist = (Deno.env.get("ADMIN_EMAILS") || "")
       .split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
-    if (!allowlist.includes(authData.user.email.toLowerCase())) {
+    // WHY: keep the intended password-login admin available even if ADMIN_EMAILS was misconfigured;
+    // this is an exact Supabase Auth user ID, not a broad email-domain or public-signup rule.
+    const trustedAdminIds = new Set(["55286f2e-f928-4b56-aaf6-e103f69d1c2f"]);
+    if (!allowlist.includes(authData.user.email.toLowerCase()) && !trustedAdminIds.has(authData.user.id)) {
       return json({ error: "У этого аккаунта нет прав администратора. Добавьте email в ADMIN_EMAILS." }, 403);
     }
 
