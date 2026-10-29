@@ -118,7 +118,8 @@ Deno.serve(async (req) => {
       const row = body.row;
       if (!row || typeof row !== "object" || Array.isArray(row)) throw new Error("Некорректные данные записи.");
       const allowed = new Set(table.columns.map((c) => c.name));
-      const clean = Object.fromEntries(Object.entries(row).filter(([key]) => allowed.has(key)));
+      const defaults = new Set(table.columns.filter((col) => col.default).map((col) => col.name));
+      const clean = Object.fromEntries(Object.entries(row).filter(([key, value]) => allowed.has(key) && !(value === null && defaults.has(key))));
       const { data, error } = await db.from(table.name).insert(clean).select("*").single();
       if (error) throw error;
       return json({ row: data });
@@ -143,10 +144,8 @@ Deno.serve(async (req) => {
       if (!row || typeof row !== "object") throw new Error("Не указана запись.");
       const key = keyFor(table, row);
       // WHY: snapshot first, then delete; if the delete fails the recycle-bin row is rolled back.
-      const { data: snapshot, error: snapshotError } = await db.from(table.name).select("*");
+      const { data: target, error: snapshotError } = await matchKey(db.from(table.name).select("*"), key).maybeSingle();
       if (snapshotError) throw snapshotError;
-      const target = (snapshot || []).find((candidate: Record<string, unknown>) =>
-        Object.entries(key).every(([k, v]) => candidate[k] === v));
       if (!target) throw new Error("Запись не найдена; обновите таблицу.");
       const { data: archived, error: archiveError } = await db.from("bandplan_admin_recycle_bin").insert({
         table_name: table.name, primary_key: key, row_data: target, deleted_by: authData.user.email,
